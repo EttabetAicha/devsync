@@ -3,19 +3,57 @@
 <html>
 <head>
   <title>Edit User</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-<h1>Edit User</h1>
-<form action="user?action=edit" method="post">
+<body class="container mt-5">
+<h1 class="mb-4">Edit User</h1>
+
+<form action="user?action=edit" method="post" class="needs-validation" novalidate>
   <input type="hidden" name="id" value="${user.id}">
-  <label for="username">Username:</label>
-  <input type="text" id="username" name="username" value="${user.username}" required><br><br>
-  <label for="email">Email:</label>
-  <input type="email" id="email" name="email" value="${user.email}" required><br><br>
-  <label for="password">New Password (leave blank to keep current):</label>
-  <input type="password" id="password" name="password"><br><br>
-  <input type="submit" value="Update User">
+
+  <div class="mb-3">
+    <label for="username" class="form-label">Username</label>
+    <input type="text" class="form-control" id="username" name="username" value="${user.username}" required>
+    <div class="invalid-feedback">
+      Please enter a username.
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label for="email" class="form-label">Email</label>
+    <input type="email" class="form-control" id="email" name="email" value="${user.email}" required>
+    <div class="invalid-feedback">
+      Please enter a valid email address.
+    </div>
+  </div>
+
+  <div class="mb-3">
+    <label for="password" class="form-label">New Password (leave blank to keep current)</label>
+    <input type="password" class="form-control" id="password" name="password">
+  </div>
+
+  <button type="submit" class="btn btn-primary">Update User</button>
+  <a href="user?action=list" class="btn btn-secondary">Back to User List</a>
 </form>
-<a href="user?action=list">Back to User List</a>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+
+<script>
+  (function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms)
+            .forEach(function (form) {
+              form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                  event.preventDefault()
+                  event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+              }, false)
+            })
+  })()
+</script>
 </body>
 </html>

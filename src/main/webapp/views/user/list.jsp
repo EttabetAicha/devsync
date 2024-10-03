@@ -6,59 +6,65 @@
 <html>
 <head>
   <title>User List</title>
-  <style>
-    /* Your existing styles */
-  </style>
+  <!-- Include Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Optional: Include Bootstrap JS and Popper.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 </head>
 <body>
-<h1>User List</h1>
-
-<!-- Display an error message if available -->
-<%
-  String errorMessage = (String) request.getAttribute("errorMessage");
-  if (errorMessage != null && !errorMessage.isEmpty()) {
-%>
-<div style="color: red;"><%= errorMessage %></div>
-<%
-  }
-%>
-
-<table>
-  <tr>
-    <th>ID</th>
-    <th>Username</th>
-    <th>Email</th>
-    <th>Actions</th>
-  </tr>
+<div class="container mt-5">
+  <h1 class="mb-4">User List</h1>
 
   <%
-    List<User> users = (List<User>) request.getAttribute("users");
-    if (users == null || users.isEmpty()) {
+    String errorMessage = (String) request.getAttribute("errorMessage");
+    if (errorMessage != null && !errorMessage.isEmpty()) {
   %>
-  <tr>
-    <td colspan="4">No users found.</td>
-  </tr>
+  <div class="alert alert-danger"><%= errorMessage %></div>
   <%
-  } else {
-    for (User user : users) {
-  %>
-  <tr>
-    <td><%= user.getId() %></td>
-    <td><%= user.getUsername() %></td>
-    <td><%= user.getEmail() %></td>
-    <td>
-      <a href="?action=view&id=<%= user.getId() %>">View</a> |
-      <a href="?action=edit&id=<%= user.getId() %>">Edit</a> |
-      <a href="?action=delete&id=<%= user.getId() %>" onclick="return confirm('Are you sure you want to delete this user?')">Delete</a>
-    </td>
-  </tr>
-  <%
-      }
     }
   %>
-</table>
 
-<a href="?action=create">Create New User</a>
+  <table class="table table-bordered table-striped">
+    <thead class="thead-dark">
+    <tr>
+      <th>ID</th>
+      <th>Username</th>
+      <th>Email</th>
+      <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    <%
+      List<User> users = (List<User>) request.getAttribute("users");
+      if (users == null || users.isEmpty()) {
+    %>
+    <tr>
+      <td colspan="4" class="text-center">No users found.</td>
+    </tr>
+    <%
+    } else {
+      for (User user : users) {
+    %>
+    <tr>
+      <td><%= user.getId() %></td>
+      <td><%= user.getUsername() %></td>
+      <td><%= user.getEmail() %></td>
+      <td>
+        <a href="?action=view&id=<%= user.getId() %>" class="btn btn-info btn-sm">View</a>
+        <a href="?action=edit&id=<%= user.getId() %>" class="btn btn-warning btn-sm">Edit</a>
+        <a href="?action=delete&id=<%= user.getId() %>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this user?')">Delete</a>
+      </td>
+    </tr>
+    <%
+        }
+      }
+    %>
+    </tbody>
+  </table>
 
+  <a href="?action=create" class="btn btn-success">Create New User</a>
+</div>
 </body>
 </html>
