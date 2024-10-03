@@ -3,13 +3,13 @@
 <html>
 <head>
   <title>Create User</title>
-  <!-- Include Bootstrap CSS -->
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="container mt-5">
 <h1 class="mb-4">Create User</h1>
 
-<!-- Bootstrap Form -->
+
 <form action="?action=create" method="post" class="needs-validation" novalidate>
   <div class="mb-3">
     <label for="username" class="form-label">Username</label>
@@ -39,11 +39,11 @@
   <a href="?action=list" class="btn btn-secondary">Back to User List</a>
 </form>
 
-<!-- Include Bootstrap JS and Popper.js (optional) -->
+
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 
-<!-- Optional JavaScript for client-side validation -->
+
 <script>
   (function () {
     'use strict'

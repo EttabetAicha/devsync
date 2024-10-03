@@ -52,9 +52,9 @@
       <td><%= user.getUsername() %></td>
       <td><%= user.getEmail() %></td>
       <td>
-        <a href="?action=view&id=<%= user.getId() %>" class="btn btn-info btn-sm">View</a>
-        <a href="?action=edit&id=<%= user.getId() %>" class="btn btn-warning btn-sm">Edit</a>
-        <a href="?action=delete&id=<%= user.getId() %>" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this user?')">Delete</a>
+        <a href="?action=view&id=<%= user.getId() %>" class="btn btn-info text-white btn-sm">View</a>
+        <a href="?action=edit&id=<%= user.getId() %>" class="btn btn-warning text-white btn-sm">Edit</a>
+        <a href="?action=delete&id=<%= user.getId() %>" class="btn btn-danger text-white btn-sm" onclick="return confirm('Are you sure you want to delete this user?')">Delete</a>
       </td>
     </tr>
     <%
