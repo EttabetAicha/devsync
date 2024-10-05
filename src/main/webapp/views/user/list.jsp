@@ -8,14 +8,12 @@
   <title>User List</title>
   <!-- Include Bootstrap CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-  <!-- Optional: Include Bootstrap JS and Popper.js -->
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 </head>
 <body>
 <div class="container mt-5">
-  <h1 class="mb-4">User List</h1>
+  <h1 class="mb-4">Users List</h1>
 
   <%
     String errorMessage = (String) request.getAttribute("errorMessage");

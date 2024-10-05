@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.aicha.model.User;
 import org.aicha.service.UserService;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.io.IOException;
 import java.util.List;
@@ -135,13 +136,12 @@ public class UserServlet extends HttpServlet {
         String username = request.getParameter("username");
         String email = request.getParameter("email");
         String password = request.getParameter("password");
-
         if (username == null || username.isEmpty() || email == null || email.isEmpty() || password == null || password.isEmpty()) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "All fields are required.");
             return;
         }
-
-        User newUser = new User(username, password, email);
+        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+        User newUser = new User(username, hashedPassword, email);
         userService.createUser(newUser);
         response.sendRedirect("user?action=list");
     }
