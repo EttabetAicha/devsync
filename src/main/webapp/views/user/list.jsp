@@ -30,6 +30,7 @@
       <th>ID</th>
       <th>Username</th>
       <th>Email</th>
+      <th>Role</th>
       <th>Actions</th>
     </tr>
     </thead>
@@ -39,7 +40,7 @@
       if (users == null || users.isEmpty()) {
     %>
     <tr>
-      <td colspan="4" class="text-center">No users found.</td>
+      <td colspan="5" class="text-center">No users found.</td>
     </tr>
     <%
     } else {
@@ -49,6 +50,9 @@
       <td><%= user.getId() %></td>
       <td><%= user.getUsername() %></td>
       <td><%= user.getEmail() %></td>
+      <td>
+        <%= user.isManager() ? "Manager" : "Simple User" %>
+      </td>
       <td>
         <a href="?action=view&id=<%= user.getId() %>" class="btn btn-info text-white btn-sm">View</a>
         <a href="?action=edit&id=<%= user.getId() %>" class="btn btn-warning text-white btn-sm">Edit</a>

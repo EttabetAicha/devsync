@@ -47,10 +47,11 @@ public class UserServlet extends HttpServlet {
                     break;
             }
         } catch (Exception e) {
-            log("Error processing POST request: " + e.getMessage(), e);
+            log("Error processing GET request: " + e.getMessage(), e);
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error: " + e.getMessage());
         }
     }
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String action = request.getParameter("action");
@@ -72,20 +73,20 @@ public class UserServlet extends HttpServlet {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error: " + e.getMessage());
         }
     }
+
     private void listUsers(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
             List<User> users = userService.getAllUsers();
-            System.out.println("Number of users found: " + users.size());  // Log the number of users retrieved
+            System.out.println("Number of users found: " + users.size());
             request.setAttribute("users", users);
             request.getRequestDispatcher("/views/user/list.jsp").forward(request, response);
         } catch (Exception e) {
             log("Error retrieving user list: " + e.getMessage(), e);
             request.setAttribute("errorMessage", "Failed to retrieve user list. Please try again later.");
-            request.setAttribute("users", List.of());  // Passing an empty list to prevent null pointer exceptions
+            request.setAttribute("users", List.of());
             request.getRequestDispatcher("/views/user/list.jsp").forward(request, response);
         }
     }
-
 
     private void viewUser(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String idParam = request.getParameter("id");
@@ -132,19 +133,26 @@ public class UserServlet extends HttpServlet {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid User ID format.");
         }
     }
+
     private void createUser(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String username = request.getParameter("username");
         String email = request.getParameter("email");
         String password = request.getParameter("password");
+        String isManagerParam = request.getParameter("ismanager");
+
         if (username == null || username.isEmpty() || email == null || email.isEmpty() || password == null || password.isEmpty()) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "All fields are required.");
             return;
         }
+
+        boolean isManager = isManagerParam != null && isManagerParam.equals("true");
+
         String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
-        User newUser = new User(username, hashedPassword, email);
+        User newUser = new User(username, hashedPassword, email, isManager);
         userService.createUser(newUser);
         response.sendRedirect("user?action=list");
     }
+
     private void updateUser(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String idParam = request.getParameter("id");
         if (idParam == null) {
@@ -157,18 +165,21 @@ public class UserServlet extends HttpServlet {
             String username = request.getParameter("username");
             String email = request.getParameter("email");
             String password = request.getParameter("password");
+            String isManagerParam = request.getParameter("ismanager");
 
             if (username == null || username.isEmpty() || email == null || email.isEmpty()) {
                 response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Username and email cannot be empty.");
                 return;
             }
-
+            boolean isManager = isManagerParam != null && isManagerParam.equals("true");
             User user = userService.getUserById(id);
             if (user != null) {
                 user.setUsername(username);
                 user.setEmail(email);
+                user.setManager(isManager);
                 if (password != null && !password.isEmpty()) {
-                    user.setPassword(password);
+                    String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+                    user.setPassword(hashedPassword);
                 }
                 userService.updateUser(user);
                 response.sendRedirect("user?action=list");
@@ -179,6 +190,7 @@ public class UserServlet extends HttpServlet {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid User ID format.");
         }
     }
+
 
     private void deleteUser(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String idParam = request.getParameter("id");

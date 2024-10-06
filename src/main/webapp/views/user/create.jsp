@@ -9,7 +9,6 @@
 <body class="container mt-5">
 <h1 class="mb-4">Create User</h1>
 
-
 <form action="?action=create" method="post" class="needs-validation" novalidate>
   <div class="mb-3">
     <label for="username" class="form-label">Username</label>
@@ -35,14 +34,24 @@
     </div>
   </div>
 
+  <div class="mb-3">
+    <label for="role" class="form-label">Role</label>
+    <select class="form-select" id="role" name="ismanager" required>
+      <option value="">Select Role</option>
+      <option value="true">Manager</option>
+      <option value="false">Simple User</option>
+    </select>
+    <div class="invalid-feedback">
+      Please select a role.
+    </div>
+  </div>
+
   <button type="submit" class="btn btn-primary">Create User</button>
   <a href="?action=list" class="btn btn-secondary">Back to User List</a>
 </form>
 
-
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
-
 
 <script>
   (function () {

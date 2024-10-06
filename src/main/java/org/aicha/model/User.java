@@ -19,15 +19,27 @@ public class User implements Serializable {
 
     @Column(nullable = false, unique = true)
     private String email;
+    @Column(name = "ismanager", nullable = false)
+    private boolean isManager;
+
 
 
 
     public User() {}
 
-    public User(String username, String password, String email) {
+    public User(String username, String password, String email,boolean isManager) {
         this.username = username;
         this.password = password;
         this.email = email;
+        this.isManager = isManager;
+    }
+
+    public boolean isManager() {
+        return isManager;
+    }
+
+    public void setManager(boolean manager) {
+        isManager = manager;
     }
 
     public Long getId() { return id; }
