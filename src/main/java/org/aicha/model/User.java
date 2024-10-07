@@ -22,9 +22,6 @@ public class User implements Serializable {
     @Column(name = "ismanager", nullable = false)
     private boolean isManager;
 
-
-
-
     public User() {}
 
     public User(String username, String password, String email,boolean isManager) {
