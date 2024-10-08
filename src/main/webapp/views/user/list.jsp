@@ -66,7 +66,7 @@
     </tbody>
   </table>
 
-  <a href="?action=create" class="btn btn-success">Create New User</a>
+<%--  <a href="?action=create" class="btn btn-success">Create New User</a>--%>
 </div>
 </body>
 </html>
