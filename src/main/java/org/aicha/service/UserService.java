@@ -25,7 +25,7 @@ public class UserService {
         try {
             return query.getSingleResult();
         } catch (NoResultException e) {
-            return null; // User not found
+            return null;
         }
     }
 
