@@ -33,9 +33,6 @@ public class UserServlet extends HttpServlet {
                 case "view":
                     viewUser(request, response);
                     break;
-                case "create":
-                    showCreateForm(request, response);
-                    break;
                 case "edit":
                     showEditForm(request, response);
                     break;
@@ -58,9 +55,6 @@ public class UserServlet extends HttpServlet {
 
         try {
             switch (action) {
-                case "create":
-                    createUser(request, response);
-                    break;
                 case "edit":
                     updateUser(request, response);
                     break;
@@ -109,10 +103,6 @@ public class UserServlet extends HttpServlet {
         }
     }
 
-    private void showCreateForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        request.getRequestDispatcher("/views/user/create.jsp").forward(request, response);
-    }
-
     private void showEditForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String idParam = request.getParameter("id");
         if (idParam == null) {
@@ -132,25 +122,6 @@ public class UserServlet extends HttpServlet {
         } catch (NumberFormatException e) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid User ID format.");
         }
-    }
-
-    private void createUser(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        String username = request.getParameter("username");
-        String email = request.getParameter("email");
-        String password = request.getParameter("password");
-        String isManagerParam = request.getParameter("ismanager");
-
-        if (username == null || username.isEmpty() || email == null || email.isEmpty() || password == null || password.isEmpty()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "All fields are required.");
-            return;
-        }
-
-        boolean isManager = isManagerParam != null && isManagerParam.equals("true");
-
-        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
-        User newUser = new User(username, hashedPassword, email, isManager);
-        userService.createUser(newUser);
-        response.sendRedirect("user?action=list");
     }
 
     private void updateUser(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -190,7 +161,6 @@ public class UserServlet extends HttpServlet {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid User ID format.");
         }
     }
-
 
     private void deleteUser(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String idParam = request.getParameter("id");

@@ -5,16 +5,28 @@
          version="5.0">
 
     <welcome-file-list>
-        <welcome-file>index.jsp</welcome-file>
+        <welcome-file>views/auth/login.jsp</welcome-file>
     </welcome-file-list>
 
-    <!-- Servlet Definition -->
+    <!-- Servlet Definition for AuthServlet -->
+    <servlet>
+        <servlet-name>AuthServlet</servlet-name>
+        <servlet-class>org.aicha.servlet.AuthServlet</servlet-class>
+    </servlet>
+
+    <!-- Servlet Mapping for AuthServlet -->
+    <servlet-mapping>
+        <servlet-name>AuthServlet</servlet-name>
+        <url-pattern>/auth</url-pattern>
+    </servlet-mapping>
+
+    <!-- Other Servlet Definitions -->
     <servlet>
         <servlet-name>UserServlet</servlet-name>
         <servlet-class>org.aicha.servlet.UserServlet</servlet-class>
     </servlet>
 
-    <!-- Servlet Mapping -->
+    <!-- Servlet Mapping for UserServlet -->
     <servlet-mapping>
         <servlet-name>UserServlet</servlet-name>
         <url-pattern>/user</url-pattern>
