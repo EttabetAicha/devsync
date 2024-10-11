@@ -147,16 +147,16 @@ public class TaskServlet extends HttpServlet {
 
     private boolean validateDates(LocalDate creationDate, LocalDate endDate) {
         if (creationDate.isAfter(endDate)) {
-            return false; // Start date should be before the end date
+            return false;
         }
         if (creationDate.isBefore(LocalDate.now())) {
-            return false; // Start date should not be in the past
+            return false;
         }
         long daysBetween = ChronoUnit.DAYS.between(LocalDate.now(), endDate);
         if (daysBetween < 3) {
-            return false; // End date should be at least 3 days from today
+            return false;
         }
-        return true; // Dates are valid
+        return true;
     }
 
 
