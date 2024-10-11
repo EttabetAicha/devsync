@@ -1,179 +1,149 @@
 package org.aicha.servlet;
 
-import jakarta.inject.Inject;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.aicha.model.User;
+import org.aicha.model.enums.UserType;
 import org.aicha.service.UserService;
-import org.mindrot.jbcrypt.BCrypt;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
-@WebServlet("/user")
+@WebServlet(name = "User", value = "/User")
 public class UserServlet extends HttpServlet {
-
-    @Inject
     private UserService userService;
 
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    public void init() throws ServletException {
+        userService = new UserService(); // Ensure this is properly initialized
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        HttpSession session = request.getSession();
         String action = request.getParameter("action");
-        if (action == null) {
-            action = "list";
-        }
-        try {
-            switch (action) {
-                case "list":
-                    listUsers(request, response);
-                    break;
-                case "view":
-                    viewUser(request, response);
-                    break;
-                case "edit":
-                    showEditForm(request, response);
-                    break;
-                case "delete":
-                    deleteUser(request, response);
-                    break;
-                default:
-                    listUsers(request, response);
-                    break;
-            }
-        } catch (Exception e) {
-            log("Error processing GET request: " + e.getMessage(), e);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error: " + e.getMessage());
+        String idParam = request.getParameter("id");
+        String typeParam = request.getParameter("type");
+
+        session.setAttribute("typeParam", typeParam);
+        switch (action) {
+            case "update":
+                handleUpdateUser(request, response, idParam, session);
+                break;
+            case "delete":
+                handleDeleteUser(request, response, idParam);
+                break;
+            case "dashboard":
+                forwardToPage(request, response, "dashboard.jsp");
+                break;
+            case "users":
+                handleUsersList(request, response);
+                break;
+            case "logout":
+                handleLogout(session, response);
+                break;
+            default:
+                response.sendRedirect("Login");
+                break;
         }
     }
 
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        HttpSession session = request.getSession();
         String action = request.getParameter("action");
 
-        try {
-            switch (action) {
-                case "edit":
-                    updateUser(request, response);
-                    break;
-                default:
-                    listUsers(request, response);
-                    break;
-            }
-        } catch (Exception e) {
-            log("Error processing POST request: " + e.getMessage(), e);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error: " + e.getMessage());
+        if ("addUser".equals(action)) {
+            forwardToPage(request, response, "admin/addUser.jsp");
+        } else {
+            handleUserUpdate(request, response, session);
         }
     }
 
-    private void listUsers(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        try {
-            List<User> users = userService.getAllUsers();
-            System.out.println("Number of users found: " + users.size());
-            request.setAttribute("users", users);
-            request.getRequestDispatcher("/views/user/list.jsp").forward(request, response);
-        } catch (Exception e) {
-            log("Error retrieving user list: " + e.getMessage(), e);
-            request.setAttribute("errorMessage", "Failed to retrieve user list. Please try again later.");
-            request.setAttribute("users", List.of());
-            request.getRequestDispatcher("/views/user/list.jsp").forward(request, response);
-        }
-    }
-
-    private void viewUser(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String idParam = request.getParameter("id");
-        if (idParam == null) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "User ID is required.");
-            return;
-        }
-
-        try {
+    private void handleUpdateUser(HttpServletRequest request, HttpServletResponse response, String idParam, HttpSession session) throws ServletException, IOException {
+        if (idParam != null) {
             Long id = Long.parseLong(idParam);
-            User user = userService.getUserById(id);
-            if (user != null) {
-                request.setAttribute("user", user);
-                request.getRequestDispatcher("/views/user/view.jsp").forward(request, response);
-            } else {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND, "User not found.");
-            }
-        } catch (NumberFormatException e) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid User ID format.");
-        }
-    }
-
-    private void showEditForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String idParam = request.getParameter("id");
-        if (idParam == null) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "User ID is required.");
-            return;
-        }
-
-        try {
-            Long id = Long.parseLong(idParam);
-            User user = userService.getUserById(id);
-            if (user != null) {
-                request.setAttribute("user", user);
-                request.getRequestDispatcher("/views/user/edit.jsp").forward(request, response);
-            } else {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND, "User not found.");
-            }
-        } catch (NumberFormatException e) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid User ID format.");
-        }
-    }
-
-    private void updateUser(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        String idParam = request.getParameter("id");
-        if (idParam == null) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "User ID is required.");
-            return;
-        }
-
-        try {
-            Long id = Long.parseLong(idParam);
-            String username = request.getParameter("username");
-            String email = request.getParameter("email");
-            String password = request.getParameter("password");
-            String isManagerParam = request.getParameter("ismanager");
-
-            if (username == null || username.isEmpty() || email == null || email.isEmpty()) {
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Username and email cannot be empty.");
-                return;
-            }
-            boolean isManager = isManagerParam != null && isManagerParam.equals("true");
-            User user = userService.getUserById(id);
-            if (user != null) {
-                user.setUsername(username);
-                user.setEmail(email);
-                user.setManager(isManager);
-                if (password != null && !password.isEmpty()) {
-                    String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
-                    user.setPassword(hashedPassword);
+            Optional<User> user = userService.getById(id);
+            if (user.isPresent()) {
+                request.setAttribute("user", user.get());
+                request.setAttribute("userLogin", session.getAttribute("user"));
+                if ("manager".equals(session.getAttribute("typeParam"))) {
+                    request.setAttribute("isManager", "true");
                 }
-                userService.updateUser(user);
-                response.sendRedirect("user?action=list");
+                forwardToPage(request, response, "admin/editUser.jsp");
             } else {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND, "User not found.");
+                response.sendRedirect("admin/listUser.jsp");
             }
-        } catch (NumberFormatException e) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid User ID format.");
+        } else {
+            response.sendRedirect("admin/listUser.jsp");
         }
     }
 
-    private void deleteUser(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        String idParam = request.getParameter("id");
-        if (idParam == null) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "User ID is required.");
-            return;
-        }
-        try {
+    private void handleDeleteUser(HttpServletRequest request, HttpServletResponse response, String idParam) throws IOException, ServletException {
+        if (idParam != null) {
             Long id = Long.parseLong(idParam);
-            userService.deleteUser(id);
-            response.sendRedirect("user?action=list");
-        } catch (NumberFormatException e) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid User ID format.");
+            Optional<User> user = userService.getById(id);
+            if (user.isPresent() && userService.deleteById(user.get().getId()).isPresent()) {
+                redirectToUserList(request, response, String.valueOf(user.get().getUserType()));
+            }
         }
+    }
+
+    private void handleUsersList(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        List<User> usersList = userService.getAll();
+        request.setAttribute("userList", usersList);
+        forwardToPage(request, response, "admin/listUser.jsp");
+    }
+
+    private void handleLogout(HttpSession session, HttpServletResponse response) throws IOException {
+        session.invalidate();
+        response.sendRedirect("Login");
+    }
+
+    private void handleUserUpdate(HttpServletRequest request, HttpServletResponse response, HttpSession session) throws ServletException, IOException {
+        String id = request.getParameter("id");
+        if (id != null) {
+            Long userId = Long.parseLong(id);
+            Optional<User> userOptional = userService.getById(userId);
+            if (userOptional.isPresent()) {
+                User user = userOptional.get();
+                updateUserDetails(request, user);
+                userService.update(user);
+                redirectToUserListAfterUpdate(request, response, session, user);
+            } else {
+                forwardToPage(request, response, "admin/listUser.jsp");
+            }
+        }
+    }
+
+    private void updateUserDetails(HttpServletRequest request, User user) {
+        user.setFirstname(request.getParameter("firstname"));
+        user.setLastname(request.getParameter("lastname"));
+        user.setEmail(request.getParameter("email"));
+        user.setPassword(request.getParameter("password"));
+    }
+
+    private void redirectToUserList(HttpServletRequest request, HttpServletResponse response, String userType) throws IOException {
+        response.sendRedirect("User?action=users&type=" + userType);
+    }
+
+    private void redirectToUserListAfterUpdate(HttpServletRequest request, HttpServletResponse response, HttpSession session, User user) throws ServletException, IOException {
+        request.setAttribute("userList", userService.getAll());
+        if (user.getUserType() == UserType.MANAGER) {
+            forwardToPage(request, response, "admin/listUser.jsp");
+        } else {
+            response.sendRedirect("User?action=users&type=user");
+        }
+    }
+
+    private void forwardToPage(HttpServletRequest request, HttpServletResponse response, String page) throws ServletException, IOException {
+        RequestDispatcher dispatcher = request.getRequestDispatcher(page);
+        dispatcher.forward(request, response);
     }
 }

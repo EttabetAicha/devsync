@@ -4,7 +4,8 @@ import jakarta.persistence.*;
 import org.aicha.model.enums.TaskStatus;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Table(name = "tasks")
@@ -14,35 +15,54 @@ public class Task implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
     private String title;
-
-    @Column(nullable = false)
     private String description;
+    private LocalDate creationDate;
+    private LocalDate endDate;
+
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "task_tag",
+            joinColumns = @JoinColumn(name = "tasks_id"),
+            inverseJoinColumns = @JoinColumn(name = "tags_id") // Match with the Tag entity
+    )
+    private List<Tag> tags; // Relationship with Tag
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private TaskStatus status;
+    @Column(name = "status", nullable = false) // Ensure the status is not nullable
+    private TaskStatus status; // Using the TaskStatus enum
 
-    @Column(nullable = false)
-    private LocalDateTime createdDate;
+    // Updated field names
+    private boolean changed; // Indicates if the task has changed
+    private boolean deleted; // Indicates if the task is deleted
 
-    @Column(nullable = false)
-    private LocalDateTime dueDate;
+    @ManyToOne
+    @JoinColumn(name = "user_id") // User who created the task
+    private User user;
 
-    private Long userId;
+    @ManyToOne
+    @JoinColumn(name = "assignee_to") // User assigned to the task
+    private User assigneeTo;
 
+    // Default constructor
     public Task() {
     }
 
-    public Task(String title, String description, LocalDateTime dueDate, Long userId) {
+    // Constructor with parameters
+    public Task(String title, String description, LocalDate creationDate, LocalDate endDate,
+                TaskStatus status, boolean changed, User user, User assigneeTo, List<Tag> tags, boolean deleted) {
         this.title = title;
         this.description = description;
-        this.status = TaskStatus.PENDING;
-        this.createdDate = LocalDateTime.now();
-        this.dueDate = dueDate;
-        this.userId = userId;
+        this.creationDate = creationDate;
+        this.endDate = endDate;
+        this.status = status;
+        this.changed = changed; // Updated to match the field name
+        this.user = user;
+        this.assigneeTo = assigneeTo;
+        this.tags = tags;
+        this.deleted = deleted;
     }
+
 
     public Long getId() {
         return id;
@@ -68,6 +88,30 @@ public class Task implements Serializable {
         this.description = description;
     }
 
+    public LocalDate getCreationDate() {
+        return creationDate;
+    }
+
+    public void setCreationDate(LocalDate creationDate) {
+        this.creationDate = creationDate;
+    }
+
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDate endDate) {
+        this.endDate = endDate;
+    }
+
+    public List<Tag> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<Tag> tags) {
+        this.tags = tags;
+    }
+
     public TaskStatus getStatus() {
         return status;
     }
@@ -76,39 +120,35 @@ public class Task implements Serializable {
         this.status = status;
     }
 
-    public LocalDateTime getCreatedDate() {
-        return createdDate;
+    public boolean isChanged() { // Getter for changed
+        return changed;
     }
 
-    public void setCreatedDate(LocalDateTime createdDate) {
-        this.createdDate = createdDate;
+    public void setChanged(boolean changed) { // Setter for changed
+        this.changed = changed;
     }
 
-    public LocalDateTime getDueDate() {
-        return dueDate;
+    public boolean isDeleted() { // Getter for deleted
+        return deleted;
     }
 
-    public void setDueDate(LocalDateTime dueDate) {
-        this.dueDate = dueDate;
+    public void setDeleted(boolean deleted) { // Setter for deleted
+        this.deleted = deleted;
     }
 
-    public Long getUserId() {
-        return userId;
+    public User getUser() {
+        return user;
     }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
+    public void setUser(User user) {
+        this.user = user;
     }
 
-    public boolean isOverdue() {
-        return LocalDateTime.now().isAfter(dueDate);
+    public User getAssigneeTo() {
+        return assigneeTo;
     }
 
-    public void markAsCompleted() {
-        this.status = TaskStatus.COMPLETED;
-    }
-
-    public void markAsCancelled() {
-        this.status = TaskStatus.CANCELLED;
+    public void setAssigneeTo(User assigneeTo) {
+        this.assigneeTo = assigneeTo;
     }
 }

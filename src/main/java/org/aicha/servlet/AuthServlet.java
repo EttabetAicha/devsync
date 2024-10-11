@@ -1,6 +1,6 @@
 package org.aicha.servlet;
 
-import jakarta.inject.Inject;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -8,128 +8,121 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.aicha.model.User;
-import org.aicha.service.AuthService;
+import org.aicha.model.enums.UserType;
+import org.aicha.service.TaskService;
+import org.aicha.service.UserService;
 
 import java.io.IOException;
+import java.util.Optional;
 
-@WebServlet("/auth")
+@WebServlet(name = "auth", urlPatterns = {"/auth"})
 public class AuthServlet extends HttpServlet {
+    private UserService userService;
+    private TaskService taskService;
 
-    @Inject
-    private AuthService authService;
+    @Override
+    public void init() throws ServletException {
+        this.userService = new UserService();
+        this.taskService = new TaskService();
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/register.jsp");
+        dispatcher.forward(request, response);
+    }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        response.setContentType("text/html");
+        HttpSession session = request.getSession(true);
         String action = request.getParameter("action");
 
-        try {
-            switch (action) {
-                case "login":
-                    loginUser(request, response);
-                    break;
-                case "logout":
-                    logoutUser(request, response);
-                    break;
-                case "register":
-                    registerUser(request, response);
-                    break;
-                default:
-                    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid action.");
-                    break;
-            }
-        } catch (Exception e) {
-            log("Error processing POST request: " + e.getMessage(), e);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error: " + e.getMessage());
+        switch (action) {
+            case "register":
+                handleRegistration(request, response, session);
+                break;
+            case "login":
+                handleLogin(request, response, session);
+                break;
+            default:
+                response.sendRedirect("index.jsp");
+                break;
         }
     }
 
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String action = request.getParameter("action");
-
-        try {
-            if (action.equals("login")) {
-                showLoginForm(request, response);
-            }else
-            if (action.equals("register")) {
-                showRegisterForm(request, response);
-            } else {
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid action.");
-            }
-
-
-        } catch (Exception e) {
-            log("Error processing GET request: " + e.getMessage(), e);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error: " + e.getMessage());
-        }
-
-
-    }
-
-    private void showRegisterForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        request.getRequestDispatcher("/views/auth/register.jsp").forward(request, response);
-    }
-    private void showLoginForm(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        request.getRequestDispatcher("/views/auth/login.jsp").forward(request, response);
-    }
-
-
-    private void registerUser(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    private void handleRegistration(HttpServletRequest request, HttpServletResponse response, HttpSession session) throws ServletException, IOException {
         String username = request.getParameter("username");
+        String firstname = request.getParameter("firstname");
+        String lastname = request.getParameter("lastname");
         String email = request.getParameter("email");
         String password = request.getParameter("password");
-        String ismanager = request.getParameter("ismanager");
+        String typeUser = request.getParameter("userType");
+        String submitType = request.getParameter("submit");
 
-        System.out.println("Registering user: " + username + ", Email: " + email + ", ismanager: " + ismanager);
-
-        if (username == null || email == null || password == null || username.isEmpty() || email.isEmpty() || password.isEmpty()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "All fields are required.");
+        UserType userType;
+        try {
+            if (typeUser == null || typeUser.isEmpty()) {
+                throw new IllegalArgumentException("User type must be specified.");
+            }
+            userType = UserType.valueOf(typeUser.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            request.setAttribute("message", "Invalid user type provided.");
+            forwardToPage(request, response, "register.jsp");
             return;
         }
 
+        User user = new User(username, firstname, lastname, password, email, userType);
         try {
-            User newUser = new User();
-            newUser.setUsername(username);
-            newUser.setEmail(email);
-            newUser.setPassword(password);
-            newUser.setManager(Boolean.parseBoolean(ismanager));
+            Optional<User> registeredUser = userService.register(user, request);
 
-            String token = authService.registerUser(newUser);
-            if (token != null) {
-                response.sendRedirect("auth?action=login");
+            if (registeredUser.isPresent()) {
+                request.setAttribute("message", "Registered successfully");
+                if ("user".equals(submitType)) {
+                    response.sendRedirect("index.jsp");
+                } else {
+                    request.setAttribute("userList", userService.getAll());
+                    forwardToPage(request, response, "admin/listUser.jsp");
+                }
             } else {
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Username already exists or registration failed.");
+                String message = (String) session.getAttribute("existEmail");
+                if (message == null) {
+                    message = (String) session.getAttribute("existUsername");
+                }
+                request.setAttribute("message", message != null ? message : "Registration failed. Please try again.");
+                forwardToPage(request, response, "register.jsp");
             }
         } catch (Exception e) {
-            log("Error during registration: " + e.getMessage(), e);
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Registration error. Please try again later.");
+            e.printStackTrace();
+            request.setAttribute("message", "An error occurred while registering. Please try again.");
+            forwardToPage(request, response, "register.jsp");
         }
     }
 
-
-    private void loginUser(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    private void handleLogin(HttpServletRequest request, HttpServletResponse response, HttpSession session) throws ServletException, IOException {
         String username = request.getParameter("username");
         String password = request.getParameter("password");
-        if (username == null || password == null || username.isEmpty() || password.isEmpty()) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Username and password are required.");
-            return;
-        }
-        String token = authService.authenticate(username, password);
-        if (token != null) {
-            HttpSession session = request.getSession();
-            session.setAttribute("userToken", token);
-            response.sendRedirect("user?action=list");
-        } else {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid username or password.");
+
+        try {
+            Optional<User> userOpt = userService.login(username, password);
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                session.setAttribute("user", user);
+                String redirectPage = user.getUserType().equals(UserType.USER) ? "userDashboard.jsp" : "adminDashboard.jsp";
+                forwardToPage(request, response, redirectPage);
+            } else {
+                request.setAttribute("message", "Invalid username or password.");
+                forwardToPage(request, response, "index.jsp");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            request.setAttribute("message", "An error occurred while logging in. Please try again.");
+            forwardToPage(request, response, "index.jsp");
         }
     }
 
-
-    private void logoutUser(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            session.invalidate();
-        }
-        response.sendRedirect("/views/auth/login.jsp");
+    private void forwardToPage(HttpServletRequest request, HttpServletResponse response, String page) throws ServletException, IOException {
+        RequestDispatcher dispatcher = request.getRequestDispatcher(page);
+        dispatcher.forward(request, response);
     }
 }

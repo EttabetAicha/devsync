@@ -1,46 +1,76 @@
 package org.aicha.service;
 
-import jakarta.ejb.Stateless;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.TypedQuery;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.aicha.model.User;
+import org.aicha.repository.UserRepository;
+import org.aicha.service.impl.UserServiceImpl;
+import org.mindrot.jbcrypt.BCrypt;
 
-import jakarta.persistence.NoResultException;
 import java.util.List;
+import java.util.Optional;
 
-@Stateless
-public class UserService {
+public class UserService implements UserServiceImpl {
 
-    @PersistenceContext(unitName = "myPU")
-    private EntityManager entityManager;
+    private UserRepository userRepository;
 
-    public User getUserById(Long id) {
-        return entityManager.find(User.class, id);
+    public UserService() {
+        this.userRepository = new UserRepository();
     }
 
-    public User getUserByUsername(String username) {
-        TypedQuery<User> query = entityManager.createQuery("SELECT u FROM User u WHERE u.username = :username", User.class);
-        query.setParameter("username", username);
-        try {
-            return query.getSingleResult();
-        } catch (NoResultException e) {
-            return null; // User not found
+    public Optional<User> register(User user, HttpServletRequest request) throws Exception {
+        HttpSession session = request.getSession();
+
+        if (user == null) {
+            session.setAttribute("emptyUser", "User cannot be null");
+            return Optional.empty();  // Return an empty Optional if user is null
         }
-    }
 
-    public List<User> getAllUsers() {
-        return entityManager.createQuery("SELECT u FROM User u", User.class).getResultList();
-    }
-
-    public void updateUser(User user) {
-        entityManager.merge(user);
-    }
-
-    public void deleteUser(Long id) {
-        User user = getUserById(id);
-        if (user != null) {
-            entityManager.remove(user);
+        // Check for existing email
+        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+            session.setAttribute("existEmail", "Email already exists");
+            return Optional.empty();
         }
+
+        // Check for existing username
+        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+            session.setAttribute("existUsername", "Username already exists");
+            return Optional.empty();
+        }
+
+        // Save the user if both checks are passed
+        userRepository.save(user);
+        return Optional.of(user);
+    }
+
+    public Optional<User> login(String username, String password) throws Exception {
+        Optional<User> user = userRepository.findByUsername(username);
+
+        if (user.isPresent()) {
+            if (BCrypt.checkpw(password, user.get().getPassword())) {
+                return user; // Login successful
+            } else {
+                throw new Exception("Wrong password");
+            }
+        }
+
+        return Optional.empty(); // Username not found
+    }
+
+    public Optional<User> getById(Long id) {
+        return userRepository.findById(id);
+    }
+
+    // Updated to accept Long id instead of User
+    public Optional<User> deleteById(Long id) {
+        return userRepository.deleteById(id);
+    }
+
+    public Optional<User> update(User user) {
+        return userRepository.update(user);
+    }
+
+    public List<User> getAll() {
+        return userRepository.getAll();
     }
 }
