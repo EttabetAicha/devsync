@@ -23,7 +23,7 @@ public class UserService implements UserServiceImpl {
 
         if (user == null) {
             session.setAttribute("emptyUser", "User cannot be null");
-            return Optional.empty();  // Return an empty Optional if user is null
+            return Optional.empty();
         }
 
         // Check for existing email
@@ -38,7 +38,6 @@ public class UserService implements UserServiceImpl {
             return Optional.empty();
         }
 
-        // Save the user if both checks are passed
         userRepository.save(user);
         return Optional.of(user);
     }
@@ -48,7 +47,7 @@ public class UserService implements UserServiceImpl {
 
         if (user.isPresent()) {
             if (BCrypt.checkpw(password, user.get().getPassword())) {
-                return user; // Login successful
+                return user;
             } else {
                 throw new Exception("Wrong password");
             }
@@ -61,7 +60,6 @@ public class UserService implements UserServiceImpl {
         return userRepository.findById(id);
     }
 
-    // Updated to accept Long id instead of User
     public Optional<User> deleteById(Long id) {
         return userRepository.deleteById(id);
     }

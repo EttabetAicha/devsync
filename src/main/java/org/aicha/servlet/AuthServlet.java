@@ -13,6 +13,7 @@ import org.aicha.service.TaskService;
 import org.aicha.service.UserService;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Optional;
 
 @WebServlet(name = "auth", urlPatterns = {"/auth"})
@@ -73,6 +74,7 @@ public class AuthServlet extends HttpServlet {
         }
 
         User user = new User(username, firstname, lastname, password, email, userType);
+
         try {
             Optional<User> registeredUser = userService.register(user, request);
 
@@ -92,12 +94,19 @@ public class AuthServlet extends HttpServlet {
                 request.setAttribute("message", message != null ? message : "Registration failed. Please try again.");
                 forwardToPage(request, response, "register.jsp");
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
+            // Log the SQLException for debugging
             e.printStackTrace();
-            request.setAttribute("message", "An error occurred while registering. Please try again.");
+            request.setAttribute("message", "Database error occurred. Please contact support.");
+            forwardToPage(request, response, "register.jsp");
+        } catch (Exception e) {
+            // Catch all other exceptions
+            e.printStackTrace();
+            request.setAttribute("message", "An unexpected error occurred during registration. Please try again.");
             forwardToPage(request, response, "register.jsp");
         }
     }
+
 
     private void handleLogin(HttpServletRequest request, HttpServletResponse response, HttpSession session) throws ServletException, IOException {
         String username = request.getParameter("username");
