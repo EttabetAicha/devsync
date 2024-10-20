@@ -15,12 +15,6 @@ public class UserService {
 
     public List<User> getAllUsers() {
         return userRepository.findAll();
-    }
-
-    public Optional<User> getUserById(Long id) {
-        // validate id
-        if (id == null || id <= 0) {
-            throw new IllegalArgumentException("Invalid id");
         }
 
         return userRepository.findById(id);
