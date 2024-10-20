@@ -11,6 +11,7 @@ public class UserService {
 
     public UserService() {
         userRepository = new UserRepository();
+
     }
 
     public List<User> getAllUsers() {
