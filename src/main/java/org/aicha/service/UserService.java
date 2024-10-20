@@ -1,46 +1,68 @@
 package org.aicha.service;
 
-import jakarta.ejb.Stateless;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.TypedQuery;
 import org.aicha.model.User;
+import org.aicha.repository.UserRepository;
 
-import jakarta.persistence.NoResultException;
 import java.util.List;
+import java.util.Optional;
 
-@Stateless
 public class UserService {
+    private UserRepository userRepository;
 
-    @PersistenceContext(unitName = "myPU")
-    private EntityManager entityManager;
-
-    public User getUserById(Long id) {
-        return entityManager.find(User.class, id);
-    }
-
-    public User getUserByUsername(String username) {
-        TypedQuery<User> query = entityManager.createQuery("SELECT u FROM User u WHERE u.username = :username", User.class);
-        query.setParameter("username", username);
-        try {
-            return query.getSingleResult();
-        } catch (NoResultException e) {
-            return null;
-        }
+    public UserService() {
+        userRepository = new UserRepository();
     }
 
     public List<User> getAllUsers() {
-        return entityManager.createQuery("SELECT u FROM User u", User.class).getResultList();
-    }
-
-    public void updateUser(User user) {
-        entityManager.merge(user);
-    }
-
-    public void deleteUser(Long id) {
-        User user = getUserById(id);
-        if (user != null) {
-            entityManager.remove(user);
+        return userRepository.findAll();
         }
+
+        return userRepository.findById(id);
+    }
+
+    public Optional<User> createUser(User user) {
+        // validate user
+        if (user == null || user.getUsername() == null || user.getUsername().isEmpty()
+                || user.getEmail() == null || user.getEmail().isEmpty()
+                || user.getPassword() == null || user.getPassword().isEmpty()) {
+            throw new IllegalArgumentException("Invalid user");
+        }
+
+        if (this.getUserByEmail(user.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Email already exists");
+        }
+
+        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+            throw new IllegalArgumentException("Username already exists");
+        }
+
+        return userRepository.create(user);
+    }
+
+    public Optional<User> updateUser(User user) {
+
+        if (user == null || user.getUsername() == null || user.getUsername().isEmpty()
+                || user.getEmail() == null || user.getEmail().isEmpty()
+                || user.getPassword() == null || user.getPassword().isEmpty()
+                || user.getId() == null || user.getId() <= 0) {
+            throw new IllegalArgumentException("Invalid user");
+        }
+        return userRepository.update(user);
+    }
+
+    public Optional<User> getUserByEmail(String email) {
+
+        if (email == null || !email.contains("@")) {
+            throw new IllegalArgumentException("Invalid email");
+        }
+        return userRepository.findByEmail(email);
+    }
+
+    public User deleteUser(User u) {
+        if (u == null || u.getId() == null || u.getId() <= 0) {
+            throw new IllegalArgumentException("Invalid user");
+        }
+
+        return userRepository.delete(u);
     }
 }
